@@ -19,7 +19,7 @@ struct C {
     }
 //    C(const C &) = delete;
 
-    C(const C &&c) noexcept {
+    C(C &&c) noexcept {
         x = n++;
         std::cout << "C::C(const C &&) " << x << "\n";
     }
