@@ -13,13 +13,13 @@ struct C {
         std::cout << "C::C " << x << "\n";
     }
 
-    C(const C &) {
+    C(const C &c) {
         x = n++;
         std::cout << "C::C(const C &) " << x << "\n";
     }
 //    C(const C &) = delete;
 
-    C(const C &&) {
+    C(const C &&c) noexcept {
         x = n++;
         std::cout << "C::C(const C &&) " << x << "\n";
     }
@@ -31,7 +31,7 @@ struct C {
         return *this;
     }
 
-    C &operator=(const C &&c) {
+    C &operator=(C &&c) noexcept {
         x = n++;
         std::cout << "C::operator=(const C &&) " << x << "\n";
         return *this;
