@@ -4,4 +4,5 @@ project(cpp-playground)
 
 add_subdirectory(constructors)
 add_subdirectory(copy-elision)
+add_subdirectory(references)
 add_subdirectory(variadic-templates)
