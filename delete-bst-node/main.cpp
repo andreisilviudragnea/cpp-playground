@@ -58,6 +58,9 @@ public:
             return root;
         }
         if (is_leaf(node)) {
+            if (parent == nullptr) {
+                return nullptr;
+            }
             if (parent->left == node) {
                 parent->left = nullptr;
             } else {
@@ -67,11 +70,13 @@ public:
         }
         if (node->left == nullptr) {
             node->val = node->right->val;
+            node->left = node->right->left;
             node->right = node->right->right;
             return root;
         }
         if (node->right == nullptr) {
             node->val = node->left->val;
+            node->right = node->left->right;
             node->left = node->left->left;
             return root;
         }
