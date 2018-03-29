@@ -12,7 +12,8 @@ struct TreeNode {
     explicit TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
 };
 
-static std::pair<TreeNode*, TreeNode*> find(TreeNode *root, TreeNode *parent, int key) {
+static std::pair<TreeNode *, TreeNode *>
+find(TreeNode *root, TreeNode *parent, int key) {
     if (root == nullptr) {
         return {nullptr, nullptr};
     }
@@ -23,10 +24,6 @@ static std::pair<TreeNode*, TreeNode*> find(TreeNode *root, TreeNode *parent, in
         return find(root->left, root, key);
     }
     return find(root->right, root, key);
-}
-
-static bool is_leaf(TreeNode *node) {
-    return node->left == nullptr && node->right == nullptr;
 }
 
 static void add(TreeNode *root, TreeNode *node) {
@@ -57,7 +54,7 @@ public:
         if (node == nullptr) {
             return root;
         }
-        if (is_leaf(node)) {
+        if (node->left == nullptr && node->right == nullptr) {
             if (parent == nullptr) {
                 return nullptr;
             }
@@ -68,22 +65,15 @@ public:
             }
             return root;
         }
-        if (node->left == nullptr) {
-            node->val = node->right->val;
-            node->left = node->right->left;
-            node->right = node->right->right;
-            return root;
+        TreeNode *chosen = node->left == nullptr ? node->right : node->left;
+        node->val = chosen->val;
+        if (node->left != nullptr) {
+            node->left = chosen->left;
+            add(node, chosen->right);
+        } else {
+            node->right = chosen->right;
+            add(node, chosen->left);
         }
-        if (node->right == nullptr) {
-            node->val = node->left->val;
-            node->right = node->left->right;
-            node->left = node->left->left;
-            return root;
-        }
-        node->val = node->left->val;
-        TreeNode *right = node->left->right;
-        node->left = node->left->left;
-        add(node, right);
         return root;
     }
 };
