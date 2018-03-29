@@ -8,8 +8,6 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 add_compile_options(
         -Wall
         -Wextra
-        -Wstrict-prototypes
-        -Wmissing-prototypes
         -Wmissing-declarations
         -Wunused-macros
         -O3
