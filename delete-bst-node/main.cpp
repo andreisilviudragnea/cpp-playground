@@ -10,6 +10,11 @@ struct TreeNode {
     TreeNode *right;
 
     explicit TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+
+    ~TreeNode() {
+        delete left;
+        delete right;
+    }
 };
 
 static std::pair<TreeNode *, TreeNode *>
@@ -56,6 +61,7 @@ public:
         }
         if (node->left == nullptr && node->right == nullptr) {
             if (parent == nullptr) {
+                delete node;
                 return nullptr;
             }
             if (parent->left == node) {
@@ -63,6 +69,7 @@ public:
             } else {
                 parent->right = nullptr;
             }
+            delete node;
             return root;
         }
         TreeNode *chosen = node->left == nullptr ? node->right : node->left;
@@ -74,6 +81,9 @@ public:
             node->right = chosen->right;
             add(node, chosen->left);
         }
+        chosen->left = nullptr;
+        chosen->right = nullptr;
+        delete chosen;
         return root;
     }
 };
@@ -161,6 +171,7 @@ static std::string treeNodeToString(TreeNode *root) {
         q.push(node->left);
         q.push(node->right);
     }
+    delete root;
     return "[" + output.substr(0, output.length() - 2) + "]";
 }
 
