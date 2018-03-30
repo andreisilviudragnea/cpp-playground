@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <queue>
 #include <sstream>
@@ -22,32 +23,35 @@ find(TreeNode *root, TreeNode *parent, int key) {
     if (root == nullptr) {
         return {nullptr, nullptr};
     }
-    if (key == root->val) {
-        return {root, parent};
-    }
     if (key < root->val) {
         return find(root->left, root, key);
     }
-    return find(root->right, root, key);
+    if (key > root->val) {
+        return find(root->right, root, key);
+    }
+    return {root, parent};
 }
 
-static void add(TreeNode *root, TreeNode *node) {
-    if (node == nullptr) {
-        return;
+static TreeNode *find_min(TreeNode *root) {
+    TreeNode *min = root;
+    while (min->left != nullptr) {
+        min = min->left;
     }
-    if (root->left == nullptr && node->val < root->val) {
-        root->left = node;
-        return;
+    return min;
+}
+
+static TreeNode *
+replace_in_parent(TreeNode *root, TreeNode *node, TreeNode *parent,
+                  TreeNode *replacement) {
+    if (parent == nullptr) {
+        return replacement;
     }
-    if (root->right == nullptr && node->val > root->val) {
-        root->right = node;
-        return;
+    if (parent->left == node) {
+        parent->left = replacement;
+    } else {
+        parent->right = replacement;
     }
-    if (node->val < root->val) {
-        add(root->left, node);
-        return;
-    }
-    add(root->right, node);
+    return root;
 }
 
 class Solution {
@@ -59,31 +63,22 @@ public:
         if (node == nullptr) {
             return root;
         }
-        if (node->left == nullptr && node->right == nullptr) {
-            if (parent == nullptr) {
-                delete node;
-                return nullptr;
-            }
-            if (parent->left == node) {
-                parent->left = nullptr;
-            } else {
-                parent->right = nullptr;
-            }
-            delete node;
+        if (node->left != nullptr && node->right != nullptr) {
+            TreeNode *chosen = find_min(node->right);
+            node->val = chosen->val;
+            node->right = deleteNode(node->right, chosen->val);
             return root;
         }
-        TreeNode *chosen = node->left == nullptr ? node->right : node->left;
-        node->val = chosen->val;
         if (node->left != nullptr) {
-            node->left = chosen->left;
-            add(node, chosen->right);
+            root = replace_in_parent(root, node, parent, node->left);
+            node->left = nullptr;
+        } else if (node->right != nullptr) {
+            root = replace_in_parent(root, node, parent, node->right);
+            node->right = nullptr;
         } else {
-            node->right = chosen->right;
-            add(node, chosen->left);
+            root = replace_in_parent(root, node, parent, nullptr);
         }
-        chosen->left = nullptr;
-        chosen->right = nullptr;
-        delete chosen;
+        delete node;
         return root;
     }
 };
@@ -171,20 +166,33 @@ static std::string treeNodeToString(TreeNode *root) {
         q.push(node->left);
         q.push(node->right);
     }
-    delete root;
     return "[" + output.substr(0, output.length() - 2) + "]";
 }
 
+static void test(const std::string &in, int key, const std::string &expected) {
+    auto root = stringToTreeNode(in);
+    auto ret = Solution().deleteNode(root, key);
+    std::string out = treeNodeToString(ret);
+    delete ret;
+    assert(out == expected);
+}
+
 int main() {
+    test("[5,3,6,2,4,null,7]", 3,
+         "[5, 4, 6, 2, null, null, 7, null, null, null, null]");
+    test("[1,null,2]", 1, "[2, null, null]");
+    test("[0]", 0, "[]");
+
     std::string line;
     while (getline(std::cin, line)) {
-        TreeNode *root = stringToTreeNode(line);
+        auto root = stringToTreeNode(line);
         getline(std::cin, line);
         int key = stringToInteger(line);
 
-        TreeNode *ret = Solution().deleteNode(root, key);
+        auto ret = Solution().deleteNode(root, key);
 
         std::string out = treeNodeToString(ret);
+        delete ret;
         std::cout << out << std::endl;
     }
     return 0;
