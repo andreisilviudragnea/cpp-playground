@@ -19,17 +19,33 @@ struct TreeNode {
 };
 
 static std::pair<TreeNode *, TreeNode *>
-find(TreeNode *root, TreeNode *parent, int key) {
+find(TreeNode *parent, TreeNode *root, int key) {
     if (root == nullptr) {
         return {nullptr, nullptr};
     }
     if (key < root->val) {
-        return find(root->left, root, key);
+        return find(root, root->left, key);
     }
     if (key > root->val) {
-        return find(root->right, root, key);
+        return find(root, root->right, key);
     }
     return {root, parent};
+//    while (true) {
+//        if (root == nullptr) {
+//            return {nullptr, nullptr};
+//        }
+//        if (key < root->val) {
+//            parent = root;
+//            root = root->left;
+//            continue;
+//        }
+//        if (key > root->val) {
+//            parent = root;
+//            root = root->right;
+//            continue;
+//        }
+//        return {root, parent};
+//    }
 }
 
 static TreeNode *find_min(TreeNode *root) {
@@ -57,9 +73,8 @@ replace_in_parent(TreeNode *root, TreeNode *node, TreeNode *parent,
 class Solution {
 public:
     TreeNode *deleteNode(TreeNode *root, int key) {
-        auto pair = find(root, nullptr, key);
+        auto pair = find(nullptr, root, key);
         auto node = pair.first;
-        auto parent = pair.second;
         if (node == nullptr) {
             return root;
         }
@@ -69,6 +84,7 @@ public:
             node->right = deleteNode(node->right, chosen->val);
             return root;
         }
+        auto parent = pair.second;
         if (node->left != nullptr) {
             root = replace_in_parent(root, node, parent, node->left);
             node->left = nullptr;
