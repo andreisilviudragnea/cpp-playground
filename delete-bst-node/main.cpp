@@ -1,21 +1,17 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <sstream>
 #include <string>
 
 struct TreeNode {
     int val;
-    TreeNode *left;
-    TreeNode *right;
+    std::unique_ptr<TreeNode> left;
+    std::unique_ptr<TreeNode> right;
 
     explicit TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
-
-    ~TreeNode() {
-        delete left;
-        delete right;
-    }
 };
 
 static std::pair<TreeNode *, TreeNode *>
@@ -24,10 +20,10 @@ find(TreeNode *parent, TreeNode *root, int key) {
         return {nullptr, nullptr};
     }
     if (key < root->val) {
-        return find(root, root->left, key);
+        return find(root, root->left.get(), key);
     }
     if (key > root->val) {
-        return find(root, root->right, key);
+        return find(root, root->right.get(), key);
     }
     return {root, parent};
 //    while (true) {
@@ -36,12 +32,12 @@ find(TreeNode *parent, TreeNode *root, int key) {
 //        }
 //        if (key < root->val) {
 //            parent = root;
-//            root = root->left;
+//            root = root->left.get();
 //            continue;
 //        }
 //        if (key > root->val) {
 //            parent = root;
-//            root = root->right;
+//            root = root->right.get();
 //            continue;
 //        }
 //        return {root, parent};
@@ -51,50 +47,50 @@ find(TreeNode *parent, TreeNode *root, int key) {
 static TreeNode *find_min(TreeNode *root) {
     TreeNode *min = root;
     while (min->left != nullptr) {
-        min = min->left;
+        min = min->left.get();
     }
     return min;
 }
 
-static TreeNode *
-replace_in_parent(TreeNode *root, TreeNode *node, TreeNode *parent,
-                  TreeNode *replacement) {
+static std::unique_ptr<TreeNode>
+replace_in_parent(std::unique_ptr<TreeNode> root, TreeNode *node,
+                  TreeNode *parent, std::unique_ptr<TreeNode> replacement) {
     if (parent == nullptr) {
         return replacement;
     }
-    if (parent->left == node) {
-        parent->left = replacement;
+    if (parent->left.get() == node) {
+        parent->left = std::move(replacement);
     } else {
-        parent->right = replacement;
+        parent->right = std::move(replacement);
     }
     return root;
 }
 
 class Solution {
 public:
-    TreeNode *deleteNode(TreeNode *root, int key) {
-        auto pair = find(nullptr, root, key);
+    std::unique_ptr<TreeNode>
+    deleteNode(std::unique_ptr<TreeNode> root, int key) {
+        auto pair = find(nullptr, root.get(), key);
         auto node = pair.first;
         if (node == nullptr) {
             return root;
         }
         if (node->left != nullptr && node->right != nullptr) {
-            TreeNode *chosen = find_min(node->right);
+            TreeNode *chosen = find_min(node->right.get());
             node->val = chosen->val;
-            node->right = deleteNode(node->right, chosen->val);
+            node->right = deleteNode(std::move(node->right), chosen->val);
             return root;
         }
         auto parent = pair.second;
         if (node->left != nullptr) {
-            root = replace_in_parent(root, node, parent, node->left);
-            node->left = nullptr;
+            root = replace_in_parent(std::move(root), node, parent,
+                                     std::move(node->left));
         } else if (node->right != nullptr) {
-            root = replace_in_parent(root, node, parent, node->right);
-            node->right = nullptr;
+            root = replace_in_parent(std::move(root), node, parent,
+                                     std::move(node->right));
         } else {
-            root = replace_in_parent(root, node, parent, nullptr);
+            root = replace_in_parent(std::move(root), node, parent, nullptr);
         }
-        delete node;
         return root;
     }
 };
@@ -111,7 +107,7 @@ static void trimRightTrailingSpaces(std::string &input) {
     }).base(), input.end());
 }
 
-static TreeNode *stringToTreeNode(std::string input) {
+static std::unique_ptr<TreeNode> stringToTreeNode(std::string input) {
     trimLeftTrailingSpaces(input);
     trimRightTrailingSpaces(input);
     input = input.substr(1, input.length() - 2);
@@ -124,9 +120,9 @@ static TreeNode *stringToTreeNode(std::string input) {
     ss.str(input);
 
     getline(ss, item, ',');
-    auto root = new TreeNode(stoi(item));
+    auto root = std::make_unique<TreeNode>(stoi(item));
     std::queue<TreeNode *> nodeQueue;
-    nodeQueue.push(root);
+    nodeQueue.push(root.get());
 
     while (true) {
         TreeNode *node = nodeQueue.front();
@@ -139,8 +135,8 @@ static TreeNode *stringToTreeNode(std::string input) {
         trimLeftTrailingSpaces(item);
         if (item != "null") {
             int leftNumber = stoi(item);
-            node->left = new TreeNode(leftNumber);
-            nodeQueue.push(node->left);
+            node->left = std::make_unique<TreeNode>(leftNumber);
+            nodeQueue.push(node->left.get());
         }
 
         if (!getline(ss, item, ',')) {
@@ -150,8 +146,8 @@ static TreeNode *stringToTreeNode(std::string input) {
         trimLeftTrailingSpaces(item);
         if (item != "null") {
             int rightNumber = stoi(item);
-            node->right = new TreeNode(rightNumber);
-            nodeQueue.push(node->right);
+            node->right = std::make_unique<TreeNode>(rightNumber);
+            nodeQueue.push(node->right.get());
         }
     }
     return root;
@@ -179,17 +175,16 @@ static std::string treeNodeToString(TreeNode *root) {
         }
 
         output += std::to_string(node->val) + ", ";
-        q.push(node->left);
-        q.push(node->right);
+        q.push(node->left.get());
+        q.push(node->right.get());
     }
     return "[" + output.substr(0, output.length() - 2) + "]";
 }
 
 static void test(const std::string &in, int key, const std::string &expected) {
     auto root = stringToTreeNode(in);
-    auto ret = Solution().deleteNode(root, key);
-    std::string out = treeNodeToString(ret);
-    delete ret;
+    auto ret = Solution().deleteNode(std::move(root), key);
+    std::string out = treeNodeToString(ret.get());
     assert(out == expected);
 }
 
@@ -204,11 +199,8 @@ int main() {
         auto root = stringToTreeNode(line);
         getline(std::cin, line);
         int key = stringToInteger(line);
-
-        auto ret = Solution().deleteNode(root, key);
-
-        std::string out = treeNodeToString(ret);
-        delete ret;
+        auto ret = Solution().deleteNode(std::move(root), key);
+        std::string out = treeNodeToString(ret.get());
         std::cout << out << std::endl;
     }
     return 0;
