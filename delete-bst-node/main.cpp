@@ -14,36 +14,6 @@ struct TreeNode {
     explicit TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
 };
 
-static std::pair<TreeNode *, TreeNode *>
-find(TreeNode *parent, TreeNode *root, int key) {
-    if (root == nullptr) {
-        return {nullptr, nullptr};
-    }
-    if (key < root->val) {
-        return find(root, root->left.get(), key);
-    }
-    if (key > root->val) {
-        return find(root, root->right.get(), key);
-    }
-    return {root, parent};
-//    while (true) {
-//        if (root == nullptr) {
-//            return {nullptr, nullptr};
-//        }
-//        if (key < root->val) {
-//            parent = root;
-//            root = root->left.get();
-//            continue;
-//        }
-//        if (key > root->val) {
-//            parent = root;
-//            root = root->right.get();
-//            continue;
-//        }
-//        return {root, parent};
-//    }
-}
-
 static std::unique_ptr<TreeNode> &
 find(std::unique_ptr<TreeNode> &root, int key) {
     if (root == nullptr) {
