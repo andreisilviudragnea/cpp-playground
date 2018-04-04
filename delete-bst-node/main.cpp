@@ -44,7 +44,8 @@ find(TreeNode *parent, TreeNode *root, int key) {
 //    }
 }
 
-static std::unique_ptr<TreeNode> &find(std::unique_ptr<TreeNode> &root, int key) {
+static std::unique_ptr<TreeNode> &
+find(std::unique_ptr<TreeNode> &root, int key) {
     if (root == nullptr) {
         return root;
     }
@@ -66,25 +67,30 @@ static std::unique_ptr<TreeNode> *find_min(std::unique_ptr<TreeNode> *root) {
 }
 
 class Solution {
-public:
-    void deleteNode(std::unique_ptr<TreeNode> &root, int key) {
-        auto &node = find(root, key);
+    static void deleteNode(std::unique_ptr<TreeNode> &node) {
         if (node == nullptr) {
             return;
         }
         if (node->left != nullptr && node->right != nullptr) {
             auto chosen = find_min(&node->right);
             node->val = (*chosen)->val;
-            deleteNode(node->right, (*chosen)->val);
+            deleteNode(*chosen);
             return;
         }
         if (node->left != nullptr) {
             node = std::move(node->left);
-        } else if (node->right != nullptr) {
-            node = std::move(node->right);
-        } else {
-            node = nullptr;
+            return;
         }
+        if (node->right != nullptr) {
+            node = std::move(node->right);
+            return;
+        }
+        node = nullptr;
+    }
+
+public:
+    void deleteNode(std::unique_ptr<TreeNode> &root, int key) {
+        deleteNode(find(root, key));
     }
 };
 
