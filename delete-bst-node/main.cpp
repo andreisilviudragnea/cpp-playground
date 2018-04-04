@@ -44,54 +44,47 @@ find(TreeNode *parent, TreeNode *root, int key) {
 //    }
 }
 
-static TreeNode *find_min(TreeNode *root) {
-    TreeNode *min = root;
-    while (min->left != nullptr) {
-        min = min->left.get();
+static std::unique_ptr<TreeNode> &find(std::unique_ptr<TreeNode> &root, int key) {
+    if (root == nullptr) {
+        return root;
     }
-    return min;
-}
-
-static std::unique_ptr<TreeNode>
-replace_in_parent(std::unique_ptr<TreeNode> root, TreeNode *node,
-                  TreeNode *parent, std::unique_ptr<TreeNode> replacement) {
-    if (parent == nullptr) {
-        return replacement;
+    if (key < root->val) {
+        return find(root->left, key);
     }
-    if (parent->left.get() == node) {
-        parent->left = std::move(replacement);
-    } else {
-        parent->right = std::move(replacement);
+    if (key > root->val) {
+        return find(root->right, key);
     }
     return root;
 }
 
+static std::unique_ptr<TreeNode> *find_min(std::unique_ptr<TreeNode> *root) {
+    auto min = root;
+    while ((*min)->left != nullptr) {
+        min = &(*min)->left;
+    }
+    return min;
+}
+
 class Solution {
 public:
-    std::unique_ptr<TreeNode>
-    deleteNode(std::unique_ptr<TreeNode> root, int key) {
-        auto pair = find(nullptr, root.get(), key);
-        auto node = pair.first;
+    void deleteNode(std::unique_ptr<TreeNode> &root, int key) {
+        auto &node = find(root, key);
         if (node == nullptr) {
-            return root;
+            return;
         }
         if (node->left != nullptr && node->right != nullptr) {
-            TreeNode *chosen = find_min(node->right.get());
-            node->val = chosen->val;
-            node->right = deleteNode(std::move(node->right), chosen->val);
-            return root;
+            auto chosen = find_min(&node->right);
+            node->val = (*chosen)->val;
+            deleteNode(node->right, (*chosen)->val);
+            return;
         }
-        auto parent = pair.second;
         if (node->left != nullptr) {
-            root = replace_in_parent(std::move(root), node, parent,
-                                     std::move(node->left));
+            node = std::move(node->left);
         } else if (node->right != nullptr) {
-            root = replace_in_parent(std::move(root), node, parent,
-                                     std::move(node->right));
+            node = std::move(node->right);
         } else {
-            root = replace_in_parent(std::move(root), node, parent, nullptr);
+            node = nullptr;
         }
-        return root;
     }
 };
 
@@ -183,8 +176,8 @@ static std::string treeNodeToString(TreeNode *root) {
 
 static void test(const std::string &in, int key, const std::string &expected) {
     auto root = stringToTreeNode(in);
-    auto ret = Solution().deleteNode(std::move(root), key);
-    std::string out = treeNodeToString(ret.get());
+    Solution().deleteNode(root, key);
+    std::string out = treeNodeToString(root.get());
     assert(out == expected);
 }
 
@@ -199,8 +192,8 @@ int main() {
         auto root = stringToTreeNode(line);
         getline(std::cin, line);
         int key = stringToInteger(line);
-        auto ret = Solution().deleteNode(std::move(root), key);
-        std::string out = treeNodeToString(ret.get());
+        Solution().deleteNode(root, key);
+        std::string out = treeNodeToString(root.get());
         std::cout << out << std::endl;
     }
     return 0;
